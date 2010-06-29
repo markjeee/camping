@@ -14,13 +14,13 @@ require "rack"
 
 class Object #:nodoc:
   def meta_def(m,&b) #:nodoc:
-    (class<<self;self end).send(:define_method,m,&b)
+    (class << self;self end).send(:define_method,m,&b)
   end
 end
 
 # If you're new to Camping, you should probably start by reading the first
 # chapters of {The Camping Book}[file:book/01_introduction.html#toc].
-# 
+#
 # Okay. So, the important thing to remember is that <tt>Camping.goes :Nuts</tt>
 # copies the Camping module into Nuts. This means that you should never use
 # any of these methods/classes on the Camping module, but rather on your own
@@ -35,10 +35,10 @@ end
 #
 # Camping also ships with:
 #
-# * Camping::Session adds states to your app. 
+# * Camping::Session adds states to your app.
 # * Camping::Server starts up your app in development.
 # * Camping::Reloader automatically reloads your apps when a file has changed.
-# 
+#
 # More importantly, Camping also installs The Camping Server,
 # please see Camping::Server.
 module Camping
@@ -49,7 +49,7 @@ module Camping
   Apps = []
   # An object-like Hash.
   # All Camping query string and cookie variables are loaded as this.
-  # 
+  #
   # To access the query string, for instance, use the <tt>@input</tt> variable.
   #
   #   module Blog::Controllers
@@ -79,7 +79,7 @@ module Camping
     end
     undef id, type if ?? == 63
   end
-  
+
   # Helpers contains methods available in your controllers and views. You may
   # add methods of your own to this module, including many helper methods from
   # Rails. This is analogous to Rails' <tt>ApplicationHelper</tt> module.
@@ -95,7 +95,7 @@ module Camping
   #
   # Often the helpers depends on other helpers, so you would have to look up
   # the dependencies too. <tt>FormTagHelper</tt> for instance required the
-  # <tt>content_tag</tt> provided by <tt>TagHelper</tt>. 
+  # <tt>content_tag</tt> provided by <tt>TagHelper</tt>.
   #
   #   require 'action_view/helpers/form_tag_helper'
   #
@@ -105,7 +105,7 @@ module Camping
   #   end
   #
   # == Return a response immediately
-  # If you need to return a response inside a helper, you can use <tt>throw :halt</tt>. 
+  # If you need to return a response inside a helper, you can use <tt>throw :halt</tt>.
   #
   #   module Nuts::Helpers
   #     def requires_login!
@@ -115,7 +115,7 @@ module Camping
   #       end
   #     end
   #   end
-  #   
+  #
   #   module Nuts::Controllers
   #     class Admin
   #       def get
@@ -181,7 +181,7 @@ module Camping
       p,h=/\(.+?\)/,g.grep(Hash)
       g-=h
       raise "bad route" unless u = c.urls.find{|x|
-        break x if x.scan(p).size == g.size && 
+        break x if x.scan(p).size == g.size &&
           /^#{x}\/?$/ =~ (x=g.inject(x){|x,a|
             x.sub p,U.escape((a[a.class.primary_key]rescue a))})
       }
@@ -196,7 +196,7 @@ module Camping
     #   self / R(Edit, 1)   #=> "/blog/edit/1"
     #
     def /(p); p[0]==?/?@root+p:p end
-    
+
     # Builds a URL route to a controller or a path, returning a URI object.
     # This way you'll get the hostname and the port number, a complete URL.
     #
@@ -254,7 +254,7 @@ module Camping
 
     # You can directly return HTML form your controller for quick debugging
     # by calling this method and pass some Markaby to it.
-    # 
+    #
     #   module Nuts::Controllers
     #     class Info
     #       def get; mab{ code @headers.inspect } end
@@ -268,7 +268,7 @@ module Camping
       s=m.capture{layout{s}} if l && m.respond_to?(:layout)
       s
     end
-    
+
     # A quick means of setting this controller's status, body and headers
     # based on a Rack response:
     #
@@ -332,7 +332,7 @@ module Camping
     #       send_email_alert(klass, method, exception)
     #       render :server_error
     #     end
-    #   end  
+    #   end
     def r500(k,m,e)
       raise e
     end
@@ -342,7 +342,7 @@ module Camping
     def r501(m)
       P % "#{m.upcase} not implemented"
     end
-    
+
     # Turn a controller into a Rack response. This is designed to be used to
     # pipe controllers into the <tt>r</tt> method. A great way to forward your
     # requests!
@@ -364,16 +364,16 @@ module Camping
       end
       r.to_a
     end
-    
-    def initialize(env, m) #:nodoc: 
+
+    def initialize(env, m) #:nodoc:
       r = @request = Rack::Request.new(@env = env)
       @root, @input, @cookies, @state,
       @headers, @status, @method =
       r.script_name.sub(/\/$/,''), n(r.params),
-      H[@old_cookies = r.cookies], H[r.session],
+      H[@old_cookies = r.cookies], r.session,
       {}, m =~ /r(\d+)/ ? $1.to_i : 200, m
     end
-    
+
     def n(h) # :nodoc:
       if Hash === h
         h.inject(H[]) do |m, (k, v)|
@@ -389,12 +389,12 @@ module Camping
     # Some magic in Camping can be performed by overriding this method.
     def service(*a)
       r = catch(:halt){send(@method, *a)}
-      @body ||= r 
+      @body ||= r
       self
     end
   end
-  
-  
+
+
   # Controllers receive the requests and sends a response back to the client.
   # A controller is simply a class which must implement the HTTP methods it
   # wants to accept:
@@ -405,23 +405,23 @@ module Camping
   #         "Hello World"
   #       end
   #     end
-  #   
+  #
   #     class Posts
   #       def post
-  #         Post.create(@input) 
+  #         Post.create(@input)
   #         redirect Index
   #       end
-  #     end  
+  #     end
   #   end
-  # 
+  #
   # == Defining a controller
-  # 
+  #
   # There are two ways to define controllers: Just defining a class and let
   # Camping figure out the route, or add the route explicitly using R.
-  # 
+  #
   # If you don't use R, Camping will first split the controller name up by
   # words (HelloWorld => Hello and World). Then it would do the following:
-  # 
+  #
   # * Replace Index with /
   # * Replace X with ([^/]+)
   # * Replace N with (\\\d+)
@@ -434,16 +434,16 @@ module Camping
   #++
   #
   # Here's a few examples:
-  # 
+  #
   #   Index   # => /
   #   PostN   # => /post/(\d+)
   #   PageX   # => /page/([^/]+)
   #   Pages   # => /pages
-  # 
+  #
   # == The request
-  # 
+  #
   # You have these variables which describes the request:
-  # 
+  #
   # * @env contains the environment as defined in http://rack.rubyforge.org/doc/SPEC.html
   # * @request is Rack::Request.new(@env)
   # * @root is the path where the app is mounted
@@ -454,7 +454,7 @@ module Camping
   # == The response
   #
   # You can change these variables to your needs:
-  # 
+  #
   # * @status is the HTTP status (defaults to 200)
   # * @headers is a hash with the headers
   # * @body is the body (a string or something which responds to #each)
@@ -483,9 +483,9 @@ module Camping
       def r #:nodoc:
         @r
       end
-      
+
       # Add routes to a controller class by piling them into the R method.
-      # 
+      #
       # The route is a regexp which will match the request path. Anything
       # enclosed in parenthesis will be sent to the method as arguments.
       #
@@ -502,7 +502,7 @@ module Camping
         r=@r
         Class.new {
           meta_def(:urls){u}
-          meta_def(:inherited){|x|r<<x}
+          meta_def(:inherited){|x|r << x}
         }
       end
 
@@ -517,7 +517,7 @@ module Camping
       # * Classes with routes are searched in order of their creation.
       #
       # So, define your catch-all controllers last.
-      def D(p, m)
+      def D(p, m, e)
         p = '/' if !p || !p[0]
         r.map { |k|
           k.urls.map { |x|
@@ -530,7 +530,7 @@ module Camping
 
       N = H.new { |_,x| x.downcase }.merge! "N" => '(\d+)', "X" => '([^/]+)', "Index" => ''
       # The route maker, this is called by Camping internally, you shouldn't
-      # need to call it. 
+      # need to call it.
       #
       # Still, it's worth know what this method does. Since Ruby doesn't keep
       # track of class creation order, we're keeping an internal list of the
@@ -569,13 +569,13 @@ module Camping
     #
     #   module Nuts::Controllers; ... end
     #   module Nuts::Models;      ... end
-    #   module Nuts::Views;       ... end 
+    #   module Nuts::Views;       ... end
     #
     # All the applications will be available in Camping::Apps.
     def goes(m)
       Apps << eval(S.gsub(/Camping/,m.to_s), TOPLEVEL_BINDING)
     end
-    
+
     # Ruby web servers use this method to enter the Camping realm. The +e+
     # argument is the environment variables hash as per the Rack specification.
     # And array with [status, headers, body] is expected at the output.
@@ -584,7 +584,7 @@ module Camping
     def call(e)
       X.M
       p = e['PATH_INFO'] = U.unescape(e['PATH_INFO'])
-      k,m,*a=X.D p,e['REQUEST_METHOD'].downcase
+      k,m,*a=X.D p,e['REQUEST_METHOD'].downcase,e
       k.new(e,m).service(*a).to_a
     rescue
       r500(:I, k, m, $!, :env => e).to_a
@@ -616,7 +616,7 @@ module Camping
       h.each { |i, v| k.send("#{i}=", v) }
       k.service(*a)
     end
-    
+
     # Injects a middleware:
     #
     #   module Blog
@@ -628,7 +628,7 @@ module Camping
       meta_def(:call) { |e| m.call(e) }
     end
   end
-  
+
   # Views is an empty module for storing methods which create HTML. The HTML
   # is described using the Markaby language.
   #
@@ -640,7 +640,7 @@ module Camping
   #     def index
   #       p "Welcome to my blog"
   #     end
-  #   
+  #
   #     def show
   #       h1 @post.title
   #       self << @post.content
@@ -665,7 +665,7 @@ module Camping
   #     end
   #   end
   module Views; include X, Helpers end
-  
+
   # Models is an empty Ruby module for housing model classes derived
   # from ActiveRecord::Base. As a shortcut, you may derive from Base
   # which is an alias for ActiveRecord::Base.
@@ -694,8 +694,7 @@ module Camping
   module Models
     autoload :Base,'camping/ar'
   end
- 
+
   autoload :Mab, 'camping/mab'
   C
 end
-
